@@ -119,13 +119,14 @@ def batch_generator(dataset, relationships_path, batch_size=64, relationships_pr
         # Elegir los 1's
         while len(left_images) < int(batch_size*relationships_prop):
             # Escogemos una linea aleatoria del CSV
-            ind = np.random.choice(relationships)
+            index = np.random.choice(len(relationships))
+            ind = relationships[index]
 
             # Comprobamos que los individuos estan en el train
             if ind[0] in dataset and ind[1] in dataset:
                 # Elegimos aleatoriamente una imagen de esos individuos
-                left_images.append( read_image( np.random.choice(dataset[ind[0]]) ) )
-                right_images.append( read_image( np.random.choice(dataset[ind[1]]) ) )
+                left_images.append(read_image(np.random.choice( images[ind[0]] )))
+                right_images.append(read_image(np.random.choice( images[ind[1]] )))
                 targets.append(1.)
 
         
@@ -137,16 +138,15 @@ def batch_generator(dataset, relationships_path, batch_size=64, relationships_pr
             # Comprobamos si son parientes
             if (ind[0],ind[1]) in relationships or (ind[1],ind[0]) in relationships:
                 # En caso afirmativo añadimos con etiqueta 1
-                left_images.append( read_image( np.random.choice(ind) ) )
-                right_images.append( read_image( np.random.choice(ind) ) )
+                left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
+                right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
                 targets.append(1.)
             else:
                 # En caso contrario con etiqueta 0
-                left_images.append( read_image( np.random.choice(ind) ) )
-                right_images.append( read_image( np.random.choice(ind) ) )
+                left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
+                right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
                 targets.append(0.)
 
-        print(left_images, right_images, targets)            
         yield [left_images, right_images], targets
 
 
@@ -164,4 +164,7 @@ for k, v in images.items():
 """
 train_dirs, val_dirs, test_dirs = generate_datasets(dirs)
 
-batch_generator(train_dirs, train_relationships)
+gen = batch_generator(train_dirs, train_relationships)
+
+for i, j in gen:
+    print(i,j)
