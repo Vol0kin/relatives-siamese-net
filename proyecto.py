@@ -145,7 +145,8 @@ def batch_generator(dataset, relationships_path, batch_size=64, relationships_pr
                 left_images.append( read_image( np.random.choice(ind) ) )
                 right_images.append( read_image( np.random.choice(ind) ) )
                 targets.append(0.)
-            
+
+        print(left_images, right_images, targets)            
         yield [left_images, right_images], targets
 
 
@@ -161,4 +162,6 @@ dirs, images = read_family_members_images(train_folders_path)
 for k, v in images.items():
     print(f"{k} -> {v}")
 """
-generate_datasets(dirs)
+train_dirs, val_dirs, test_dirs = generate_datasets(dirs)
+
+batch_generator(train_dirs, train_relationships)
