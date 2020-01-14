@@ -404,3 +404,6 @@ TSWLatexianTemp*
 
 # Makeindex log files
 *.lpz
+
+# PyCharm files
+.idea/
