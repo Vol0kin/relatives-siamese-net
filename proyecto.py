@@ -5,15 +5,17 @@ import numpy as np
 import pandas as pd
 from keras.preprocessing import image
 from keras_vggface.utils import preprocess_input
+from keras_vggface.vggface import VGGFace
+from keras.layers import Input, Dense, GlobalMaxPool2D, GlobalAvgPool2D, Dropout, Conv2D, Activation, BatchNormalization, MaxPooling2D, Flatten, Lambda
+from keras.models import Model, Sequential
+from keras.optimizers import Adam
+from keras import backend as K
 
 """
 import cv2
 
-from keras.layers import Input, Dense, GlobalMaxPool2D, GlobalAvgPool2D, Dropout
-from keras.models import Model
 
 from keras_vggface.utils import preprocess_input
-from keras_vggface.vggface import VGGFace
 
 !pip install git+https://github.com/rcmalli/keras-vggface.git
 """
@@ -139,15 +141,48 @@ def batch_generator(dataset, images, relationships_path, batch_size=64, relation
                 # En caso afirmativo añadimos con etiqueta 1
                 left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
                 right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
-                targets.append(1.)
+                targets.append(1.0)
             else:
                 # En caso contrario con etiqueta 0
                 left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
                 right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
-                targets.append(0.)
+                targets.append(0.0)
 
         yield [left_images, right_images], targets
 
+
+def montame_esta_nicolas():
+    shape = (224, 224, 3)
+    left_input = Input(shape)
+    right_input = Input(shape)
+    vgg_model = VGGFace(model='resnet50', include_top=False, weights="vggface", pooling="max")
+
+    # Connect each 'leg' of the network to each input
+    # Remember, they have the same weights
+    encoded_l = vgg_model(left_input)
+    encoded_r = vgg_model(right_input)
+
+    # Getting the L1 Distance between the 2 encodings
+    L1_layer = Lambda(lambda tensor:K.abs(tensor[0] - tensor[1]))
+
+    # Add the distance function to the network
+    L1_distance = L1_layer([encoded_l, encoded_r])
+
+    prediction = Dense(1,activation='sigmoid')(L1_distance)
+    siamese_net = Model(inputs=[left_input,right_input],outputs=prediction)
+
+    optimizer = Adam(0.001, decay=2.5e-4)
+    #//TODO: get layerwise learning rates and momentum annealing scheme described in paperworking
+    siamese_net.compile(loss="binary_crossentropy",optimizer=optimizer,metrics=['accuracy'])
+
+    siamese_net.summary()
+    """
+    siamese_net.fit([left_input,right_input], targets,
+            batch_size=16,
+            epochs=30,
+            verbose=1,
+            validation_data=([test_left,test_right],test_targets))
+    """
 
 
 
@@ -162,8 +197,11 @@ for k, v in images.items():
     print(f"{k} -> {v}")
 """
 train_dirs, val_dirs, test_dirs = generate_datasets(dirs)
-
 gen = batch_generator(train_dirs, images, train_relationships)
 
+"""
 for i, j in gen:
     print(i,j)
+"""
+
+montame_esta_nicolas()
