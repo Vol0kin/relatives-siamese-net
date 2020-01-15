@@ -107,7 +107,7 @@ def generate_datasets(families, test_prop=0.2, val_prop=0.2):
     return train_dirs, val_dirs, test_dirs
 
 
-def batch_generator(dataset, relationships_path, batch_size=64, relationships_prop=0.2):
+def batch_generator(dataset, images, relationships_path, batch_size=64, relationships_prop=0.2):
     relationships = pd.read_csv(relationships_path)
     relationships = list(zip(relationships.p1.values, relationships.p2.values))
     
@@ -129,7 +129,6 @@ def batch_generator(dataset, relationships_path, batch_size=64, relationships_pr
                 right_images.append(read_image(np.random.choice( images[ind[1]] )))
                 targets.append(1.)
 
-        
         # Elegir los 0's
         while len(left_images) < int(batch_size):
             # Accedemos dos individuos diferentes aleatorios del dataset
@@ -164,7 +163,7 @@ for k, v in images.items():
 """
 train_dirs, val_dirs, test_dirs = generate_datasets(dirs)
 
-gen = batch_generator(train_dirs, train_relationships)
+gen = batch_generator(train_dirs, images, train_relationships)
 
 for i, j in gen:
     print(i,j)
