@@ -409,3 +409,5 @@ TSWLatexianTemp*
 .idea/
 
 .vscode/
+
+*.zip
