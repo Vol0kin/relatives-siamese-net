@@ -109,49 +109,120 @@ def generate_datasets(families, test_prop=0.2, val_prop=0.2):
     return train_dirs, val_dirs, test_dirs
 
 
+
+def dataset_to_images(dataset, images, relationships, size, relationships_prop):
+    """
+    Funcion que genera dos arrays de individuos con un tamaño determinado, y otro que
+    nos indica el parentesco entre un par de individuos de cada uno de los arrays anteriores.
+    Los datos se escogeran de forma aleatoria entre todos los individuos proporcionados.
+    Args:
+        dataset: Array con los directorios de las familias.
+        images: Array con los directorios de las imagenes de cada individuo de la familia.
+        relationships: Relaciones entre los individuos a procesar.
+        size: Tamaño de los datos a generar.
+        relationships_prop: Proporcion de individuos con un parentesco familiar que tendran
+                            los datos generados.
+    
+    Return:
+        Devuelve dos arrays con los individuos que serán procesados por cada una de las
+        partes de nuestra red, y un array con los parentescos entre los arrays anteriores
+    """    
+    left_images = []
+    right_images = []
+    targets = []
+
+    # Elegir los 1's
+    while len(left_images) < int(size*relationships_prop):
+        # Escogemos una linea aleatoria del CSV
+        index = np.random.choice(len(relationships))
+        ind = relationships[index]
+
+        # Comprobamos que los individuos estan en el dataset
+        if ind[0] in dataset and ind[1] in dataset:
+            # Elegimos aleatoriamente una imagen de esos individuos
+            left_images.append(read_image(np.random.choice( images[ind[0]] )))
+            right_images.append(read_image(np.random.choice( images[ind[1]] )))
+            targets.append(1.)
+
+    # Elegir los 0's
+    while len(left_images) < int(size):
+        # Accedemos dos individuos diferentes aleatorios del dataset
+        ind = np.random.choice(dataset, 2, replace=False)
+
+        # Comprobamos si son parientes
+        if (ind[0],ind[1]) in relationships or (ind[1],ind[0]) in relationships:
+            # En caso afirmativo añadimos con etiqueta 1
+            left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
+            right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
+            targets.append(1.0)
+        else:
+            # En caso contrario con etiqueta 0
+            left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
+            right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
+            targets.append(0.0)
+    
+    left_images = np.array(left_images)
+    right_images = np.array(right_images)
+
+    return left_images, right_images, targets
+
+
+
+def data_generator(dataset, images, relationships_path, data_size, relationships_prop=0.2):
+    """
+    Args:
+        dataset: Array con los directorios de las familias.
+        images: Array con los directorios de las imagenes de cada individuo
+                de la familia.
+        relationships_path: Ruta del archivo de relaciones a procesar.
+        data_size: Tamaño de los datos a generar.
+        relationships_prop: Proporcion de individuos con un parentesco familiar
+                            que tendran los datos generados.
+    
+    Return:
+        Devuelve dos arrays con los individuos que serán procesados por cada una
+        de las partes de nuestra red, y un array con los parentescos entre los
+        arrays anteriores
+    """
+    # Leemos el archivo donde se encuentran las relaciones familiares entre individuos
+    relationships = pd.read_csv(relationships_path)
+    relationships = list(zip(relationships.p1.values, relationships.p2.values))
+
+    # Generamos un conjunto de imagenes aleatorias y las devolvemos
+    left_images, right_images, targets = dataset_to_images(dataset, images, relationships, data_size, relationships_prop)
+
+    return [left_images, right_images], targets
+
+
+
 def batch_generator(dataset, images, relationships_path, batch_size=64, relationships_prop=0.2):
+    """
+    Args:
+        dataset: Array con los directorios de las familias.
+        images: Array con los directorios de las imagenes de cada individuo
+                de la familia.
+        relationships_path: Ruta del archivo de relaciones a procesar.
+        batch_size: Tamaño del batch.
+        relationships_prop: Proporcion de individuos con un parentesco familiar
+                            que tendran los datos generados.
+    
+    Return:
+        Devuelve dos arrays con los individuos que serán procesados por cada una
+        de las partes de nuestra red, y un array con los parentescos entre los
+        arrays anteriores
+    """
+    # Leemos el archivo donde se encuentran las relaciones familiares entre individuos
     relationships = pd.read_csv(relationships_path)
     relationships = list(zip(relationships.p1.values, relationships.p2.values))
     
+
     while True:
-        left_images = []
-        right_images = []
-        targets = []
-    
-        # Elegir los 1's
-        while len(left_images) < int(batch_size*relationships_prop):
-            # Escogemos una linea aleatoria del CSV
-            index = np.random.choice(len(relationships))
-            ind = relationships[index]
-
-            # Comprobamos que los individuos estan en el train
-            if ind[0] in dataset and ind[1] in dataset:
-                # Elegimos aleatoriamente una imagen de esos individuos
-                left_images.append(read_image(np.random.choice( images[ind[0]] )))
-                right_images.append(read_image(np.random.choice( images[ind[1]] )))
-                targets.append(1.)
-
-        # Elegir los 0's
-        while len(left_images) < int(batch_size):
-            # Accedemos dos individuos diferentes aleatorios del dataset
-            ind = np.random.choice(dataset, 2, replace=False)
-
-            # Comprobamos si son parientes
-            if (ind[0],ind[1]) in relationships or (ind[1],ind[0]) in relationships:
-                # En caso afirmativo añadimos con etiqueta 1
-                left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
-                right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
-                targets.append(1.0)
-            else:
-                # En caso contrario con etiqueta 0
-                left_images.append( read_image( np.random.choice(images[ind[0]]) ) )
-                right_images.append( read_image( np.random.choice(images[ind[1]]) ) )
-                targets.append(0.0)
-        
-        left_images = np.array(left_images)
-        right_images = np.array(right_images)
+        # Generamos un conjunto de imagenes aleatorias y lo devolvemos hasta
+        # que el iterador vuelva a pedir otro
+        left_images, right_images, targets = dataset_to_images(dataset, images, relationships, batch_size, relationships_prop)
 
         yield [left_images, right_images], targets
+
 
 
 def montame_esta_nicolas():
@@ -236,3 +307,7 @@ model = montame_esta_nicolas()
 model.fit_generator(batch_generator(train_dirs, images, train_relationships, batch_size=32),
                     validation_data=batch_generator(val_dirs, images, train_relationships, batch_size=32),
                     epochs=10, verbose=1, steps_per_epoch=20, validation_steps=10)
+
+score = model.evaluate(data_generator(test_dirs, images, train_relationships, len(test_dirs)), verbose=0)
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
