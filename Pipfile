@@ -5,10 +5,12 @@ name = "pypi"
 
 [packages]
 numpy = "*"
-pandas = "*"
 matplotlib = "*"
-tensorflow = "==1.14"
+scikit-learn = "*"
+opencv-python = "*"
+tensorflow = "==1.15"
 keras = "==2.2.4"
+pandas = "*"
 
 [dev-packages]
 
