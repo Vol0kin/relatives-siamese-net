@@ -242,7 +242,7 @@ def show_history(hist):
     plt.show()
 
 
-"""
+'''
 def visualize_model(model):
     """
     Funcion que muestra la arquitectura de un modelo
@@ -252,7 +252,7 @@ def visualize_model(model):
     """
     img = plot_model(model, show_shapes=True, show_layer_names=True)
     display(img)
-"""
+'''
 
 """# **Initializers implementation:**"""
 
