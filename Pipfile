@@ -8,7 +8,7 @@ numpy = "*"
 matplotlib = "*"
 scikit-learn = "*"
 opencv-python = "*"
-tensorflow = "==1.15.2"
+tensorflow = "==2.5.3"
 keras = "==2.2.4"
 pandas = "*"
 
